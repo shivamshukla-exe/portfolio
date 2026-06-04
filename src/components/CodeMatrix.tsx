@@ -78,7 +78,7 @@ export default function CodeMatrix() {
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="text-center">
           <p className="sheen-text font-mono text-xs md:text-sm tracking-widest">
-            Python • TensorFlow • PyTorch • React • Flask • FastAPI • SQL • Selenium • Tableau
+            Python • TensorFlow • PyTorch • React • Flask • SARIMA • OpenCV • NLP • Spotify API • DeepLabV3+
           </p>
         </div>
       </div>
