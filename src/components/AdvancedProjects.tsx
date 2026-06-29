@@ -142,7 +142,7 @@ export default function AdvancedProjects() {
         <div className="mb-16">
           <h2 className="text-5xl md:text-7xl font-black text-white mb-4">Projects</h2>
           <div className="w-16 h-1 bg-blue-500 mb-4" />
-          <p className="text-slate-400">
+          <p className="text-slate-200">
             Crime forecasting for police, satellite segmentation for govt., emotion-driven music — and more.
           </p>
         </div>
@@ -221,14 +221,14 @@ function ProjectCard({ project, index, hovered, visible, cardRef, onEnter, onLea
         </h3>
 
         {/* description */}
-        <p className="text-slate-400 text-sm leading-relaxed mb-5 flex-1">
+        <p className="text-slate-200 text-sm leading-relaxed mb-5 flex-1">
           {project.description}
         </p>
 
         {/* tech tags */}
         <div className="flex flex-wrap gap-1.5 mb-5">
           {project.tags.map(tag => (
-            <span key={tag} className="text-xs font-mono px-2 py-0.5 bg-slate-900 text-slate-400 rounded border border-slate-700">
+            <span key={tag} className="text-xs font-mono px-2 py-0.5 bg-slate-900 text-slate-200 rounded border border-slate-700">
               {tag}
             </span>
           ))}
@@ -245,7 +245,7 @@ function ProjectCard({ project, index, hovered, visible, cardRef, onEnter, onLea
               <p className={`text-base font-black bg-gradient-to-r ${project.gradient} bg-clip-text text-transparent`}>
                 {stat.value}
               </p>
-              <p className="text-xs text-slate-500 mt-0.5">{stat.label}</p>
+              <p className="text-xs text-slate-300 mt-0.5">{stat.label}</p>
             </div>
           ))}
         </div>
@@ -255,7 +255,7 @@ function ProjectCard({ project, index, hovered, visible, cardRef, onEnter, onLea
           href={project.github}
           target="_blank"
           rel="noopener noreferrer"
-          className={`flex items-center gap-2 text-slate-400 hover:text-white transition-all duration-200 ${
+          className={`flex items-center gap-2 text-slate-200 hover:text-white transition-all duration-200 ${
             hovered ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
           onClick={e => e.stopPropagation()}

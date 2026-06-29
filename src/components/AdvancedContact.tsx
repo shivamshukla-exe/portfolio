@@ -54,7 +54,7 @@ export default function AdvancedContact() {
           <h2 className="text-5xl md:text-7xl font-black text-white mb-6">
             Let's talk.
           </h2>
-          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+          <p className="text-lg text-slate-200 max-w-2xl mx-auto">
             Open to AI/ML roles, research collaborations, and interesting problems.
           </p>
         </div>
@@ -73,7 +73,7 @@ export default function AdvancedContact() {
                       <Icon className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-slate-400 text-sm mb-1">{item.label}</p>
+                      <p className="text-slate-200 text-sm mb-1">{item.label}</p>
                       {item.href ? (
                         <a
                           href={item.href}

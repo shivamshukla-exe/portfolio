@@ -55,17 +55,17 @@ export default function About() {
             }`}
           >
             <h3 className="text-3xl font-bold text-white mb-6">Background</h3>
-            <p className="text-lg text-slate-400 leading-relaxed mb-6">
+            <p className="text-lg text-slate-200 leading-relaxed mb-6">
               I'm a final-year AI/ML student who builds things that go into production.
               My internship at BISAG-N under MeitY had me doing satellite image segmentation
               for the PM Gatishakti national initiative — real government infrastructure, real stakes.
             </p>
-            <p className="text-lg text-slate-400 leading-relaxed mb-6">
+            <p className="text-lg text-slate-200 leading-relaxed mb-6">
               Before that I was at Unified Mentor doing data science — pipelines, dashboards,
               the unglamorous work that actually makes ML useful. I also have a patent application
               filed for a multimodal emotion detection system that ties into Spotify.
             </p>
-            <p className="text-lg text-slate-400 leading-relaxed">
+            <p className="text-lg text-slate-200 leading-relaxed">
               I went to Delhi Public School (93.6% in XII, 91% in X), now wrapping up a B.Tech
               in AI &amp; ML at AKGEC. I speak English, Hindi, and a little French.
             </p>
@@ -90,7 +90,7 @@ export default function About() {
                     <p className="text-blue-400 font-medium mb-2">
                       Ajay Kumar Garg Engineering College
                     </p>
-                    <div className="flex justify-between items-center text-sm text-slate-500 font-mono">
+                    <div className="flex justify-between items-center text-sm text-slate-300 font-mono">
                       <span>CGPA: 7.88</span>
                       <span>2021 – 2025</span>
                     </div>
@@ -108,7 +108,7 @@ export default function About() {
                     <p className="text-slate-300 font-medium mb-2">
                       Delhi Public School, Mathura Road
                     </p>
-                    <div className="flex justify-between items-center text-sm text-slate-500 font-mono">
+                    <div className="flex justify-between items-center text-sm text-slate-300 font-mono">
                       <span>XII: 93.6% &nbsp;|&nbsp; X: 91%</span>
                       <span>2020 – 2021</span>
                     </div>
@@ -135,10 +135,10 @@ export default function About() {
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
                     <h4 className="text-xl font-semibold text-white">AI/ML Intern</h4>
-                    <span className="text-xs text-slate-500 font-mono">Jul 2024 – present</span>
+                    <span className="text-xs text-slate-300 font-mono">Jul 2024 – present</span>
                   </div>
                   <p className="text-blue-400 font-medium mb-3">BISAG-N / MeitY — Government of India</p>
-                  <ul className="text-slate-400 text-sm space-y-1 list-disc list-inside">
+                  <ul className="text-slate-200 text-sm space-y-1 list-disc list-inside">
                     <li>Rooftop segmentation on satellite imagery using DeepLabV3+ (ResNet-101 backbone)</li>
                     <li>Part of the PM Gatishakti national infrastructure digitisation initiative</li>
                     <li>Improved mIoU by ~15% over the baseline U-Net approach</li>
@@ -155,10 +155,10 @@ export default function About() {
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
                     <h4 className="text-xl font-semibold text-white">Data Science Intern</h4>
-                    <span className="text-xs text-slate-500 font-mono">May – Jul 2024</span>
+                    <span className="text-xs text-slate-300 font-mono">May – Jul 2024</span>
                   </div>
                   <p className="text-slate-300 font-medium mb-3">Unified Mentor</p>
-                  <ul className="text-slate-400 text-sm space-y-1 list-disc list-inside">
+                  <ul className="text-slate-200 text-sm space-y-1 list-disc list-inside">
                     <li>Built end-to-end ML pipelines for classification and regression tasks</li>
                     <li>Created data visualisation dashboards with Tableau and Power BI</li>
                     <li>Worked with Pandas, NumPy, and Scikit-learn for EDA and modelling</li>
@@ -186,7 +186,7 @@ export default function About() {
                 {skills.languages.map(skill => (
                   <span
                     key={skill}
-                    className="px-3 py-1 bg-slate-900 text-slate-400 text-sm rounded font-mono border border-slate-700"
+                    className="px-3 py-1 bg-slate-900 text-slate-200 text-sm rounded font-mono border border-slate-700"
                   >
                     {skill}
                   </span>
@@ -203,7 +203,7 @@ export default function About() {
                 {skills.frameworks.map(skill => (
                   <span
                     key={skill}
-                    className="px-3 py-1 bg-slate-900 text-slate-400 text-sm rounded font-mono border border-slate-700"
+                    className="px-3 py-1 bg-slate-900 text-slate-200 text-sm rounded font-mono border border-slate-700"
                   >
                     {skill}
                   </span>
@@ -220,7 +220,7 @@ export default function About() {
                 {skills.tools.map(skill => (
                   <span
                     key={skill}
-                    className="px-3 py-1 bg-slate-900 text-slate-400 text-sm rounded font-mono border border-slate-700"
+                    className="px-3 py-1 bg-slate-900 text-slate-200 text-sm rounded font-mono border border-slate-700"
                   >
                     {skill}
                   </span>
@@ -237,7 +237,7 @@ export default function About() {
                 {skills.ml.map(skill => (
                   <span
                     key={skill}
-                    className="px-3 py-1 bg-slate-900 text-slate-400 text-sm rounded font-mono border border-slate-700"
+                    className="px-3 py-1 bg-slate-900 text-slate-200 text-sm rounded font-mono border border-slate-700"
                   >
                     {skill}
                   </span>

@@ -132,18 +132,18 @@ export default function HeroTerminal() {
         </div>
 
         <div className="mb-8 overflow-hidden">
-          <p className="text-xl md:text-2xl text-slate-400 font-light tracking-wide">
+          <p className="text-xl md:text-2xl text-slate-200 font-light tracking-wide">
             Built satellite segmentation for the Indian govt. Filed a patent at 21.
           </p>
         </div>
 
         <div className="mb-3 overflow-hidden">
-          <p className="text-base text-slate-500 font-light">
+          <p className="text-base text-slate-300 font-light">
             AI/ML Engineer &amp; Full Stack Developer
           </p>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-3 text-sm text-slate-400 mb-12">
+        <div className="flex flex-wrap justify-center gap-3 text-sm text-slate-200 mb-12">
           {['Python', 'TensorFlow', 'PyTorch', 'React', 'Flask', 'NLP & LLMs'].map((tag, i) => (
             <span
               key={tag}
