@@ -84,55 +84,51 @@ const projects: Project[] = [
   },
 ];
 
-const STICKY_TOP = 100;       // px from top where every card pins
-const CARD_HEIGHT_VH = 80;    // scroll length per card (in viewport units)
+const STICKY_BASE = 90;   // px from top where the first card pins
+const STICKY_STEP = 26;   // each card pins this much further down (stair-step lip)
 
 export default function AdvancedProjects() {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const wrapperRefs  = useRef<(HTMLDivElement | null)[]>([]);
-  const innerRefs    = useRef<(HTMLDivElement | null)[]>([]);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // On scroll, compute per-card scale + opacity based on how much of the
-  // *next* card has covered this one. This is the AWS pattern.
+  // Shrink + dim a card once the NEXT card rises up to cover it.
   useEffect(() => {
     let raf = 0;
 
     const update = () => {
-      const vh = window.innerHeight;
+      raf = 0;
+      cardRefs.current.forEach((card, i) => {
+        if (!card) return;
+        const next = cardRefs.current[i + 1];
 
-      wrapperRefs.current.forEach((wrap, i) => {
-        if (!wrap) return;
-        const inner = innerRefs.current[i];
-        if (!inner) return;
+        if (!next) {
+          // last card stays pristine
+          card.style.transform = 'scale(1)';
+          card.style.opacity = '1';
+          card.style.filter = 'brightness(1)';
+          return;
+        }
 
-        const rect = wrap.getBoundingClientRect();
-        // Progress: 0 while card is in view, grows to 1 as next card pushes it away
-        // We measure: how far has the card scrolled past its pin?
-        const cardHeightPx = vh * CARD_HEIGHT_VH / 100;
-        const scrolledPast = -rect.top + STICKY_TOP; // px past pin
-        let progress = scrolledPast / cardHeightPx;
+        const pinTop = STICKY_BASE + i * STICKY_STEP;
+        const nextTop = next.getBoundingClientRect().top;
+
+        // progress 0 → 1 as the next card travels the last ~420px up to the pin
+        const COVER = 420;
+        let progress = 1 - (nextTop - pinTop) / COVER;
         progress = Math.max(0, Math.min(1, progress));
 
-        // Don't shrink the last card
-        if (i === projects.length - 1) progress = 0;
+        const scale = 1 - progress * 0.07;
+        const opacity = 1 - progress * 0.4;
+        const brightness = 1 - progress * 0.35;
 
-        // Scale shrinks 0 → 0.06, opacity dims to 0.55, brightness to 0.7
-        const scale      = 1 - progress * 0.06;
-        const opacity    = 1 - progress * 0.45;
-        const brightness = 1 - progress * 0.3;
-        const yShift     = -progress * 12; // slight pull-up for depth
-
-        inner.style.transform = `translate3d(0, ${yShift}px, 0) scale(${scale})`;
-        inner.style.opacity   = `${opacity}`;
-        inner.style.filter    = `brightness(${brightness})`;
+        card.style.transform = `scale(${scale})`;
+        card.style.opacity = `${opacity}`;
+        card.style.filter = `brightness(${brightness})`;
       });
-
-      raf = 0;
     };
 
     const onScroll = () => {
-      if (raf) return;
-      raf = requestAnimationFrame(update);
+      if (!raf) raf = requestAnimationFrame(update);
     };
 
     update();
@@ -146,10 +142,7 @@ export default function AdvancedProjects() {
   }, []);
 
   return (
-    <section
-      id="projects"
-      className="relative bg-slate-900"
-    >
+    <section id="projects" className="relative bg-slate-900">
       {/* heading */}
       <div className="max-w-4xl mx-auto px-6 pt-24 pb-12">
         <h2 className="text-5xl md:text-7xl font-black text-white mb-4">Projects</h2>
@@ -159,106 +152,95 @@ export default function AdvancedProjects() {
         </p>
       </div>
 
-      {/* card stack */}
-      <div className="max-w-4xl mx-auto px-6 pb-32">
+      {/* card stack — all cards are SIBLINGS in one container, each sticky */}
+      <div className="max-w-4xl mx-auto px-6 pb-[45vh] space-y-8">
         {projects.map((project, index) => (
           <div
             key={index}
-            ref={el => { wrapperRefs.current[index] = el; }}
-            className="relative"
+            ref={el => { cardRefs.current[index] = el; }}
+            className="sticky will-change-transform"
             style={{
-              // Each wrapper is tall — that's what gives us scroll distance
-              // to pin the inner card while moving past it
-              height: `${CARD_HEIGHT_VH}vh`,
+              top: `${STICKY_BASE + index * STICKY_STEP}px`,
+              zIndex: index + 1,
+              transformOrigin: 'center top',
             }}
+            onMouseEnter={() => setHoveredIndex(index)}
+            onMouseLeave={() => setHoveredIndex(null)}
           >
             <div
-              ref={el => { innerRefs.current[index] = el; }}
-              className="sticky will-change-transform origin-top"
-              style={{
-                top: `${STICKY_TOP}px`,
-                zIndex: index + 1,
-                // start at no transform; JS updates inline styles
-                transformOrigin: 'center top',
-              }}
-              onMouseEnter={() => setHoveredIndex(index)}
-              onMouseLeave={() => setHoveredIndex(null)}
+              className={`
+                relative rounded-2xl overflow-hidden
+                bg-slate-800 border border-slate-700
+                shadow-2xl shadow-black/60
+                transition-shadow duration-300
+                ${hoveredIndex === index ? 'shadow-blue-500/20' : ''}
+              `}
             >
-              <div
-                className={`
-                  relative rounded-2xl overflow-hidden
-                  bg-slate-800 border border-slate-700
-                  shadow-2xl shadow-black/50
-                  transition-shadow duration-300
-                  ${hoveredIndex === index ? 'shadow-blue-500/15' : ''}
-                `}
-              >
-                {/* accent bar */}
-                <div className={`h-[3px] w-full bg-gradient-to-r ${project.gradient}`} />
+              {/* accent bar */}
+              <div className={`h-[3px] w-full bg-gradient-to-r ${project.gradient}`} />
 
-                <div className="p-7 md:p-9 flex flex-col md:flex-row gap-6">
-                  {/* content */}
-                  <div className="flex-1 flex flex-col">
-                    <span
-                      className={`inline-block self-start text-xs font-mono px-2 py-0.5 rounded mb-3 text-white bg-gradient-to-r ${project.gradient} opacity-90`}
-                    >
-                      {project.subtitle}
-                    </span>
+              <div className="p-7 md:p-9 flex flex-col md:flex-row gap-6">
+                {/* content */}
+                <div className="flex-1 flex flex-col">
+                  <span
+                    className={`inline-block self-start text-xs font-mono px-2 py-0.5 rounded mb-3 text-white bg-gradient-to-r ${project.gradient} opacity-90`}
+                  >
+                    {project.subtitle}
+                  </span>
 
-                    <h3 className="text-2xl md:text-3xl font-black text-white mb-3">
-                      {project.title}
-                    </h3>
+                  <h3 className="text-2xl md:text-3xl font-black text-white mb-3">
+                    {project.title}
+                  </h3>
 
-                    <p className="text-slate-200 text-sm leading-relaxed mb-4">
-                      {project.description}
-                    </p>
+                  <p className="text-slate-200 text-sm leading-relaxed mb-4">
+                    {project.description}
+                  </p>
 
-                    <div className="flex flex-wrap gap-1.5 mb-5">
-                      {project.tags.map(tag => (
-                        <span
-                          key={tag}
-                          className="text-xs font-mono px-2 py-0.5 bg-slate-900 text-slate-300 rounded border border-slate-700"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-
-                    <a
-                      href={project.github}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-slate-300 hover:text-white transition-colors mt-auto"
-                      onClick={e => e.stopPropagation()}
-                    >
-                      <Github className="w-4 h-4" />
-                      <span className="font-mono text-xs">View on GitHub</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
-
-                  {/* stats */}
-                  <div className="flex flex-row md:flex-col gap-5 md:gap-6 md:w-40 justify-around md:justify-start md:pl-6 md:border-l md:border-slate-700">
-                    {project.stats.map((stat, i) => (
-                      <div key={i} className="text-center md:text-left">
-                        <p
-                          className={`text-xl md:text-2xl font-black bg-gradient-to-r ${project.gradient} bg-clip-text text-transparent`}
-                        >
-                          {stat.value}
-                        </p>
-                        <p className="text-xs text-slate-300 mt-0.5">{stat.label}</p>
-                      </div>
+                  <div className="flex flex-wrap gap-1.5 mb-5">
+                    {project.tags.map(tag => (
+                      <span
+                        key={tag}
+                        className="text-xs font-mono px-2 py-0.5 bg-slate-900 text-slate-300 rounded border border-slate-700"
+                      >
+                        {tag}
+                      </span>
                     ))}
                   </div>
+
+                  <a
+                    href={project.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-slate-300 hover:text-white transition-colors mt-auto"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <Github className="w-4 h-4" />
+                    <span className="font-mono text-xs">View on GitHub</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
                 </div>
 
-                {/* hover border */}
-                <div
-                  className={`absolute inset-0 border-2 rounded-2xl pointer-events-none transition-all duration-300 ${
-                    hoveredIndex === index ? 'border-blue-500/40' : 'border-transparent'
-                  }`}
-                />
+                {/* stats */}
+                <div className="flex flex-row md:flex-col gap-5 md:gap-6 md:w-40 justify-around md:justify-start md:pl-6 md:border-l md:border-slate-700">
+                  {project.stats.map((stat, i) => (
+                    <div key={i} className="text-center md:text-left">
+                      <p
+                        className={`text-xl md:text-2xl font-black bg-gradient-to-r ${project.gradient} bg-clip-text text-transparent`}
+                      >
+                        {stat.value}
+                      </p>
+                      <p className="text-xs text-slate-300 mt-0.5">{stat.label}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
+
+              {/* hover border */}
+              <div
+                className={`absolute inset-0 border-2 rounded-2xl pointer-events-none transition-all duration-300 ${
+                  hoveredIndex === index ? 'border-blue-500/40' : 'border-transparent'
+                }`}
+              />
             </div>
           </div>
         ))}
