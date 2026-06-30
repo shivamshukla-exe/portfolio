@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Github, ExternalLink } from 'lucide-react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 interface Project {
   title: string;
@@ -84,194 +88,147 @@ const projects: Project[] = [
   },
 ];
 
+// Config for the stacked effect
+const CARD_TOP_OFFSET = 80;   // first card sticks at this px from top
+const CARD_INCREMENT  = 30;   // each subsequent card sticks 30px further down
+const SCALE_SHRINK    = 0.04; // how much each card shrinks when "behind"
+
 export default function AdvancedProjects() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const cardEls    = useRef<(HTMLDivElement | null)[]>([]);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [visibleCards, setVisibleCards] = useState<boolean[]>(projects.map(() => false));
 
+  // GSAP ScrollTrigger — scale + dim cards as they get scrolled past
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (rect) setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
+    const triggers: ScrollTrigger[] = [];
 
-  useEffect(() => {
-    const observers = cardRefs.current.map((card, i) => {
-      if (!card) return null;
-      const obs = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) {
-            setTimeout(() => {
-              setVisibleCards(prev => {
-                const next = [...prev];
-                next[i] = true;
-                return next;
-              });
-            }, i * 120);
-          }
+    cardEls.current.forEach((card, i) => {
+      if (!card || i === projects.length - 1) return; // last card doesn't shrink
+
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: card,
+          start: `top ${CARD_TOP_OFFSET + i * CARD_INCREMENT}px`,
+          endTrigger: cardEls.current[i + 1]!,
+          end: `top ${CARD_TOP_OFFSET + (i + 1) * CARD_INCREMENT}px`,
+          scrub: 0.4,
+          // pin: false — we rely on sticky
         },
-        { threshold: 0.08 }
-      );
-      obs.observe(card);
-      return obs;
+      });
+
+      tl.to(card, {
+        scale: 1 - SCALE_SHRINK,
+        opacity: 0.6,
+        filter: 'brightness(0.7)',
+        ease: 'none',
+      });
+
+      if (tl.scrollTrigger) triggers.push(tl.scrollTrigger);
     });
-    return () => observers.forEach(o => o?.disconnect());
+
+    return () => triggers.forEach(t => t.kill());
   }, []);
 
   return (
     <section
       id="projects"
-      ref={containerRef}
-      className="relative py-24 px-6 bg-slate-900 overflow-hidden"
+      ref={sectionRef}
+      className="relative bg-slate-900 overflow-visible"
     >
-      {/* ambient cursor glow */}
-      <div className="absolute inset-0 opacity-20 pointer-events-none">
-        <div
-          className="absolute w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-3xl transition-all duration-700"
-          style={{ left: `${mousePos.x}px`, top: `${mousePos.y}px`, transform: 'translate(-50%, -50%)' }}
-        />
+      {/* heading — not sticky */}
+      <div className="max-w-4xl mx-auto px-6 pt-24 pb-12">
+        <h2 className="text-5xl md:text-7xl font-black text-white mb-4">Projects</h2>
+        <div className="w-16 h-1 bg-blue-500 mb-4" />
+        <p className="text-slate-200">
+          Crime forecasting for police, satellite segmentation for govt., emotion-driven music — and more.
+        </p>
       </div>
 
-      <div className="max-w-7xl mx-auto relative z-10">
-        {/* heading */}
-        <div className="mb-16">
-          <h2 className="text-5xl md:text-7xl font-black text-white mb-4">Projects</h2>
-          <div className="w-16 h-1 bg-blue-500 mb-4" />
-          <p className="text-slate-200">
-            Crime forecasting for police, satellite segmentation for govt., emotion-driven music — and more.
-          </p>
-        </div>
+      {/* card stack area — tall enough to allow scroll through all cards */}
+      <div className="max-w-4xl mx-auto px-6 pb-24 relative">
+        {projects.map((project, index) => (
+          <div
+            key={index}
+            ref={el => { cardEls.current[index] = el; }}
+            className="sticky mb-6 will-change-transform origin-top"
+            style={{
+              top: `${CARD_TOP_OFFSET + index * CARD_INCREMENT}px`,
+              zIndex: index + 1,
+            }}
+            onMouseEnter={() => setHoveredIndex(index)}
+            onMouseLeave={() => setHoveredIndex(null)}
+          >
+            <div className={`
+              relative rounded-2xl overflow-hidden
+              bg-slate-800 border border-slate-700
+              shadow-xl shadow-black/30
+              transition-shadow duration-300
+              ${hoveredIndex === index ? 'shadow-2xl shadow-blue-500/10' : ''}
+            `}>
+              {/* accent bar */}
+              <div className={`h-[3px] w-full bg-gradient-to-r ${project.gradient}`} />
 
-        {/* top row — 3 cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-6">
-          {projects.slice(0, 3).map((project, index) => (
-            <ProjectCard
-              key={index}
-              project={project}
-              index={index}
-              hovered={hoveredIndex === index}
-              visible={visibleCards[index]}
-              cardRef={el => { cardRefs.current[index] = el; }}
-              onEnter={() => setHoveredIndex(index)}
-              onLeave={() => setHoveredIndex(null)}
-            />
-          ))}
-        </div>
+              <div className="p-7 md:p-8 flex flex-col md:flex-row gap-6">
+                {/* left: content */}
+                <div className="flex-1 flex flex-col">
+                  <span className={`inline-block self-start text-xs font-mono px-2 py-0.5 rounded mb-3 text-white bg-gradient-to-r ${project.gradient} opacity-90`}>
+                    {project.subtitle}
+                  </span>
 
-        {/* bottom row — 2 cards centred */}
-        <div className="grid md:grid-cols-2 gap-6 md:w-2/3 mx-auto">
-          {projects.slice(3).map((project, i) => {
-            const index = i + 3;
-            return (
-              <ProjectCard
-                key={index}
-                project={project}
-                index={index}
-                hovered={hoveredIndex === index}
-                visible={visibleCards[index]}
-                cardRef={el => { cardRefs.current[index] = el; }}
-                onEnter={() => setHoveredIndex(index)}
-                onLeave={() => setHoveredIndex(null)}
+                  <h3 className="text-2xl md:text-3xl font-black text-white mb-3 group-hover:text-blue-300 transition-colors">
+                    {project.title}
+                  </h3>
+
+                  <p className="text-slate-200 text-sm leading-relaxed mb-4">
+                    {project.description}
+                  </p>
+
+                  {/* tags */}
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    {project.tags.map(tag => (
+                      <span key={tag} className="text-xs font-mono px-2 py-0.5 bg-slate-900 text-slate-300 rounded border border-slate-700">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* github */}
+                  <a
+                    href={project.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-slate-300 hover:text-white transition-colors mt-auto"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <Github className="w-4 h-4" />
+                    <span className="font-mono text-xs">View on GitHub</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+
+                {/* right: stats panel */}
+                <div className="flex flex-row md:flex-col gap-4 md:gap-6 md:w-36 justify-center md:justify-start md:pt-8 md:border-l md:border-slate-700 md:pl-6">
+                  {project.stats.map((stat, i) => (
+                    <div key={i} className="text-center md:text-left">
+                      <p className={`text-xl md:text-2xl font-black bg-gradient-to-r ${project.gradient} bg-clip-text text-transparent`}>
+                        {stat.value}
+                      </p>
+                      <p className="text-xs text-slate-300 mt-0.5">{stat.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* hover glow border */}
+              <div
+                className={`absolute inset-0 border-2 rounded-2xl pointer-events-none transition-all duration-300 ${
+                  hoveredIndex === index ? 'border-blue-500/40' : 'border-transparent'
+                }`}
               />
-            );
-          })}
-        </div>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
-  );
-}
-
-interface CardProps {
-  project: Project;
-  index: number;
-  hovered: boolean;
-  visible: boolean;
-  cardRef: (el: HTMLDivElement | null) => void;
-  onEnter: () => void;
-  onLeave: () => void;
-}
-
-function ProjectCard({ project, index, hovered, visible, cardRef, onEnter, onLeave }: CardProps) {
-  return (
-    <div
-      ref={cardRef}
-      className={`relative rounded-2xl overflow-hidden cursor-pointer group bg-slate-800 border border-slate-700 transition-all duration-700 flex flex-col ${
-        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-      }`}
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
-    >
-      {/* top accent bar */}
-      <div className={`h-[3px] w-full bg-gradient-to-r ${project.gradient} flex-shrink-0`} />
-
-      <div className="p-7 flex flex-col flex-1">
-        {/* subtitle badge */}
-        <span className={`inline-block self-start text-xs font-mono px-2 py-0.5 rounded mb-3 text-white bg-gradient-to-r ${project.gradient} opacity-90`}>
-          {project.subtitle}
-        </span>
-
-        {/* title */}
-        <h3 className="text-2xl font-black text-white mb-2 group-hover:text-blue-300 transition-colors duration-300">
-          {project.title}
-        </h3>
-
-        {/* description */}
-        <p className="text-slate-200 text-sm leading-relaxed mb-5 flex-1">
-          {project.description}
-        </p>
-
-        {/* tech tags */}
-        <div className="flex flex-wrap gap-1.5 mb-5">
-          {project.tags.map(tag => (
-            <span key={tag} className="text-xs font-mono px-2 py-0.5 bg-slate-900 text-slate-200 rounded border border-slate-700">
-              {tag}
-            </span>
-          ))}
-        </div>
-
-        {/* stats — fade in on hover */}
-        <div
-          className={`grid grid-cols-3 gap-3 border-t border-slate-700 pt-4 mb-4 transition-all duration-300 ${
-            hovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
-          }`}
-        >
-          {project.stats.map((stat, i) => (
-            <div key={i} className="text-center">
-              <p className={`text-base font-black bg-gradient-to-r ${project.gradient} bg-clip-text text-transparent`}>
-                {stat.value}
-              </p>
-              <p className="text-xs text-slate-300 mt-0.5">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* GitHub link — fade in on hover */}
-        <a
-          href={project.github}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`flex items-center gap-2 text-slate-200 hover:text-white transition-all duration-200 ${
-            hovered ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
-          onClick={e => e.stopPropagation()}
-        >
-          <Github className="w-4 h-4" />
-          <span className="font-mono text-xs">View on GitHub</span>
-          <ExternalLink className="w-3 h-3" />
-        </a>
-      </div>
-
-      {/* hover border glow */}
-      <div
-        className={`absolute inset-0 border-2 rounded-2xl pointer-events-none transition-all duration-300 ${
-          hovered ? 'border-blue-500/40' : 'border-transparent'
-        }`}
-      />
-    </div>
   );
 }
