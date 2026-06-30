@@ -30,7 +30,7 @@ function App() {
   }, []);
 
   return (
-    <div className="antialiased overflow-x-hidden relative">
+    <div className="antialiased relative" style={{ overflowX: 'clip' }}>
       <AnimatedBackground />
       <MouseFollower />
       <ScrollIndicator />

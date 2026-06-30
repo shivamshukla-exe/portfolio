@@ -8,7 +8,8 @@
   }
 
   body {
-    @apply overflow-x-hidden bg-slate-900;
+    @apply bg-slate-900;
+    overflow-x: clip; /* clip prevents horizontal scroll without breaking position: sticky */
   }
 
   * {

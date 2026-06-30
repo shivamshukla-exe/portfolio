@@ -1,9 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { Github, ExternalLink } from 'lucide-react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-gsap.registerPlugin(ScrollTrigger);
 
 interface Project {
   title: string;
@@ -88,143 +84,181 @@ const projects: Project[] = [
   },
 ];
 
-// Config for the stacked effect
-const CARD_TOP_OFFSET = 80;   // first card sticks at this px from top
-const CARD_INCREMENT  = 30;   // each subsequent card sticks 30px further down
-const SCALE_SHRINK    = 0.04; // how much each card shrinks when "behind"
+const STICKY_TOP = 100;       // px from top where every card pins
+const CARD_HEIGHT_VH = 80;    // scroll length per card (in viewport units)
 
 export default function AdvancedProjects() {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const cardEls    = useRef<(HTMLDivElement | null)[]>([]);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const wrapperRefs  = useRef<(HTMLDivElement | null)[]>([]);
+  const innerRefs    = useRef<(HTMLDivElement | null)[]>([]);
 
-  // GSAP ScrollTrigger — scale + dim cards as they get scrolled past
+  // On scroll, compute per-card scale + opacity based on how much of the
+  // *next* card has covered this one. This is the AWS pattern.
   useEffect(() => {
-    const triggers: ScrollTrigger[] = [];
+    let raf = 0;
 
-    cardEls.current.forEach((card, i) => {
-      if (!card || i === projects.length - 1) return; // last card doesn't shrink
+    const update = () => {
+      const vh = window.innerHeight;
 
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: card,
-          start: `top ${CARD_TOP_OFFSET + i * CARD_INCREMENT}px`,
-          endTrigger: cardEls.current[i + 1]!,
-          end: `top ${CARD_TOP_OFFSET + (i + 1) * CARD_INCREMENT}px`,
-          scrub: 0.4,
-          // pin: false — we rely on sticky
-        },
+      wrapperRefs.current.forEach((wrap, i) => {
+        if (!wrap) return;
+        const inner = innerRefs.current[i];
+        if (!inner) return;
+
+        const rect = wrap.getBoundingClientRect();
+        // Progress: 0 while card is in view, grows to 1 as next card pushes it away
+        // We measure: how far has the card scrolled past its pin?
+        const cardHeightPx = vh * CARD_HEIGHT_VH / 100;
+        const scrolledPast = -rect.top + STICKY_TOP; // px past pin
+        let progress = scrolledPast / cardHeightPx;
+        progress = Math.max(0, Math.min(1, progress));
+
+        // Don't shrink the last card
+        if (i === projects.length - 1) progress = 0;
+
+        // Scale shrinks 0 → 0.06, opacity dims to 0.55, brightness to 0.7
+        const scale      = 1 - progress * 0.06;
+        const opacity    = 1 - progress * 0.45;
+        const brightness = 1 - progress * 0.3;
+        const yShift     = -progress * 12; // slight pull-up for depth
+
+        inner.style.transform = `translate3d(0, ${yShift}px, 0) scale(${scale})`;
+        inner.style.opacity   = `${opacity}`;
+        inner.style.filter    = `brightness(${brightness})`;
       });
 
-      tl.to(card, {
-        scale: 1 - SCALE_SHRINK,
-        opacity: 0.6,
-        filter: 'brightness(0.7)',
-        ease: 'none',
-      });
+      raf = 0;
+    };
 
-      if (tl.scrollTrigger) triggers.push(tl.scrollTrigger);
-    });
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(update);
+    };
 
-    return () => triggers.forEach(t => t.kill());
+    update();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, []);
 
   return (
     <section
       id="projects"
-      ref={sectionRef}
-      className="relative bg-slate-900 overflow-visible"
+      className="relative bg-slate-900"
     >
-      {/* heading — not sticky */}
+      {/* heading */}
       <div className="max-w-4xl mx-auto px-6 pt-24 pb-12">
         <h2 className="text-5xl md:text-7xl font-black text-white mb-4">Projects</h2>
         <div className="w-16 h-1 bg-blue-500 mb-4" />
         <p className="text-slate-200">
-          Crime forecasting for police, satellite segmentation for govt., emotion-driven music — and more.
+          Crime forecasting for police, satellite segmentation for govt., emotion-driven music — and more. Scroll to stack.
         </p>
       </div>
 
-      {/* card stack area — tall enough to allow scroll through all cards */}
-      <div className="max-w-4xl mx-auto px-6 pb-24 relative">
+      {/* card stack */}
+      <div className="max-w-4xl mx-auto px-6 pb-32">
         {projects.map((project, index) => (
           <div
             key={index}
-            ref={el => { cardEls.current[index] = el; }}
-            className="sticky mb-6 will-change-transform origin-top"
+            ref={el => { wrapperRefs.current[index] = el; }}
+            className="relative"
             style={{
-              top: `${CARD_TOP_OFFSET + index * CARD_INCREMENT}px`,
-              zIndex: index + 1,
+              // Each wrapper is tall — that's what gives us scroll distance
+              // to pin the inner card while moving past it
+              height: `${CARD_HEIGHT_VH}vh`,
             }}
-            onMouseEnter={() => setHoveredIndex(index)}
-            onMouseLeave={() => setHoveredIndex(null)}
           >
-            <div className={`
-              relative rounded-2xl overflow-hidden
-              bg-slate-800 border border-slate-700
-              shadow-xl shadow-black/30
-              transition-shadow duration-300
-              ${hoveredIndex === index ? 'shadow-2xl shadow-blue-500/10' : ''}
-            `}>
-              {/* accent bar */}
-              <div className={`h-[3px] w-full bg-gradient-to-r ${project.gradient}`} />
+            <div
+              ref={el => { innerRefs.current[index] = el; }}
+              className="sticky will-change-transform origin-top"
+              style={{
+                top: `${STICKY_TOP}px`,
+                zIndex: index + 1,
+                // start at no transform; JS updates inline styles
+                transformOrigin: 'center top',
+              }}
+              onMouseEnter={() => setHoveredIndex(index)}
+              onMouseLeave={() => setHoveredIndex(null)}
+            >
+              <div
+                className={`
+                  relative rounded-2xl overflow-hidden
+                  bg-slate-800 border border-slate-700
+                  shadow-2xl shadow-black/50
+                  transition-shadow duration-300
+                  ${hoveredIndex === index ? 'shadow-blue-500/15' : ''}
+                `}
+              >
+                {/* accent bar */}
+                <div className={`h-[3px] w-full bg-gradient-to-r ${project.gradient}`} />
 
-              <div className="p-7 md:p-8 flex flex-col md:flex-row gap-6">
-                {/* left: content */}
-                <div className="flex-1 flex flex-col">
-                  <span className={`inline-block self-start text-xs font-mono px-2 py-0.5 rounded mb-3 text-white bg-gradient-to-r ${project.gradient} opacity-90`}>
-                    {project.subtitle}
-                  </span>
+                <div className="p-7 md:p-9 flex flex-col md:flex-row gap-6">
+                  {/* content */}
+                  <div className="flex-1 flex flex-col">
+                    <span
+                      className={`inline-block self-start text-xs font-mono px-2 py-0.5 rounded mb-3 text-white bg-gradient-to-r ${project.gradient} opacity-90`}
+                    >
+                      {project.subtitle}
+                    </span>
 
-                  <h3 className="text-2xl md:text-3xl font-black text-white mb-3 group-hover:text-blue-300 transition-colors">
-                    {project.title}
-                  </h3>
+                    <h3 className="text-2xl md:text-3xl font-black text-white mb-3">
+                      {project.title}
+                    </h3>
 
-                  <p className="text-slate-200 text-sm leading-relaxed mb-4">
-                    {project.description}
-                  </p>
+                    <p className="text-slate-200 text-sm leading-relaxed mb-4">
+                      {project.description}
+                    </p>
 
-                  {/* tags */}
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    {project.tags.map(tag => (
-                      <span key={tag} className="text-xs font-mono px-2 py-0.5 bg-slate-900 text-slate-300 rounded border border-slate-700">
-                        {tag}
-                      </span>
-                    ))}
+                    <div className="flex flex-wrap gap-1.5 mb-5">
+                      {project.tags.map(tag => (
+                        <span
+                          key={tag}
+                          className="text-xs font-mono px-2 py-0.5 bg-slate-900 text-slate-300 rounded border border-slate-700"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    <a
+                      href={project.github}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-slate-300 hover:text-white transition-colors mt-auto"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <Github className="w-4 h-4" />
+                      <span className="font-mono text-xs">View on GitHub</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
                   </div>
 
-                  {/* github */}
-                  <a
-                    href={project.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-slate-300 hover:text-white transition-colors mt-auto"
-                    onClick={e => e.stopPropagation()}
-                  >
-                    <Github className="w-4 h-4" />
-                    <span className="font-mono text-xs">View on GitHub</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
+                  {/* stats */}
+                  <div className="flex flex-row md:flex-col gap-5 md:gap-6 md:w-40 justify-around md:justify-start md:pl-6 md:border-l md:border-slate-700">
+                    {project.stats.map((stat, i) => (
+                      <div key={i} className="text-center md:text-left">
+                        <p
+                          className={`text-xl md:text-2xl font-black bg-gradient-to-r ${project.gradient} bg-clip-text text-transparent`}
+                        >
+                          {stat.value}
+                        </p>
+                        <p className="text-xs text-slate-300 mt-0.5">{stat.label}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                {/* right: stats panel */}
-                <div className="flex flex-row md:flex-col gap-4 md:gap-6 md:w-36 justify-center md:justify-start md:pt-8 md:border-l md:border-slate-700 md:pl-6">
-                  {project.stats.map((stat, i) => (
-                    <div key={i} className="text-center md:text-left">
-                      <p className={`text-xl md:text-2xl font-black bg-gradient-to-r ${project.gradient} bg-clip-text text-transparent`}>
-                        {stat.value}
-                      </p>
-                      <p className="text-xs text-slate-300 mt-0.5">{stat.label}</p>
-                    </div>
-                  ))}
-                </div>
+                {/* hover border */}
+                <div
+                  className={`absolute inset-0 border-2 rounded-2xl pointer-events-none transition-all duration-300 ${
+                    hoveredIndex === index ? 'border-blue-500/40' : 'border-transparent'
+                  }`}
+                />
               </div>
-
-              {/* hover glow border */}
-              <div
-                className={`absolute inset-0 border-2 rounded-2xl pointer-events-none transition-all duration-300 ${
-                  hoveredIndex === index ? 'border-blue-500/40' : 'border-transparent'
-                }`}
-              />
             </div>
           </div>
         ))}
