@@ -155,8 +155,11 @@ export default function HeroTerminal() {
           ))}
         </div>
 
-        <div>
-          <button className="inline-flex items-center gap-3 px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium text-base group relative overflow-hidden transition-all duration-200">
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          <a
+            href="#projects"
+            className="inline-flex items-center gap-3 px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium text-base group relative overflow-hidden transition-all duration-200"
+          >
             <span className="relative flex items-center gap-2">
               View My Work
               <svg
@@ -168,7 +171,18 @@ export default function HeroTerminal() {
                 <path d="M12 5v14M19 12l-7 7-7-7" strokeWidth={2} strokeLinecap="round" />
               </svg>
             </span>
-          </button>
+          </a>
+
+          <a
+            href={`${import.meta.env.BASE_URL}Shivam_Shukla_Resume.pdf`}
+            download="Shivam_Shukla_Resume.pdf"
+            className="inline-flex items-center gap-2 px-8 py-3.5 bg-transparent border border-slate-600 hover:border-blue-500 text-slate-200 hover:text-white rounded-lg font-medium text-base transition-all duration-200"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Download Resume
+          </a>
         </div>
       </div>
 

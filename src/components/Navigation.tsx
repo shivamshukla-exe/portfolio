@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Menu, X, Github, Linkedin, Mail } from 'lucide-react';
+import { Menu, X, Github, Linkedin, Mail, Download } from 'lucide-react';
+
+const RESUME_URL = `${import.meta.env.BASE_URL}Shivam_Shukla_Resume.pdf`;
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -94,6 +96,14 @@ export default function Navigation() {
             >
               <Mail className="w-5 h-5" />
             </a>
+            <a
+              href={RESUME_URL}
+              download="Shivam_Shukla_Resume.pdf"
+              className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Resume
+            </a>
           </div>
 
           <button
@@ -148,6 +158,15 @@ export default function Navigation() {
               <Mail className="w-6 h-6" />
             </a>
           </div>
+
+          <a
+            href={RESUME_URL}
+            download="Shivam_Shukla_Resume.pdf"
+            className="flex items-center gap-2 mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors animate-fade-in-up animation-delay-600"
+          >
+            <Download className="w-4 h-4" />
+            Download Resume
+          </a>
         </div>
       </div>
     </>
